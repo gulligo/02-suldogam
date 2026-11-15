@@ -25,9 +25,10 @@ h1{margin:0 0 10px;font-size:22px;text-align:center;color:var(--g8)}
 .sort button{border:0;background:none;color:var(--g6);font-size:13px;padding:4px 6px}
 .sort button.on{color:var(--g8);font-weight:700;text-decoration:underline}
 main{padding:4px 14px 100px}
-.item{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--g2);border-radius:12px;padding:9px;margin-bottom:8px}
+.item{position:relative;display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--g2);border-radius:12px;padding:9px;margin-bottom:8px}
 .thumb{width:54px;height:70px;border-radius:8px;object-fit:cover;flex:none;background:#F1EFE8}
-.info{flex:1;min-width:0}
+.info{flex:1;min-width:0;padding-right:44px}
+.abv{position:absolute;top:10px;right:12px;font-size:15px;font-weight:700;color:var(--g4)}
 .nm{font-size:16px;font-weight:700;color:var(--g8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tp{font-size:11px;padding:2px 7px;border-radius:10px;background:var(--g0);color:var(--g6);margin-left:4px;font-weight:400;vertical-align:2px}
 .note{font-size:13px;color:var(--g6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
@@ -63,7 +64,7 @@ label{display:block;font-size:13px;color:var(--g6);margin:12px 0 5px}
 <h1>02술도감</h1>
 <input class="search" id="q" placeholder="술 이름 검색 (먹었나?)">
 <div class="tabs" id="tabs"></div>
-<div class="bar"><span id="cnt"></span><span class="sort"><button data-s="name" class="on">이름순</button><button data-s="rate">평점순</button></span></div>
+<div class="bar"><span id="cnt"></span><span class="sort"><button data-s="name" class="on">이름순</button><button data-s="rate">평점순</button><button data-s="abv">도수순</button></span></div>
 </header>
 <main id="list"></main>
 <button class="fab" id="add">+</button>
@@ -73,6 +74,7 @@ label{display:block;font-size:13px;color:var(--g6);margin:12px 0 5px}
 <div class="pic" id="pic">사진 넣기 (눌러서 찍기·고르기)</div>
 <input type="file" id="file" accept="image/*" hidden>
 <label>이름</label><input class="in" id="fName" placeholder="참이슬 후레쉬">
+<label>도수 (%)</label><input class="in" id="fAbv" type="number" inputmode="decimal" step="0.1" min="0" placeholder="4.5">
 <label>종류</label><div class="types" id="fTypes"></div>
 <label>평점 (별 왼쪽 누르면 반 개)</label>
 <div class="rate"><span class="stars" id="fStars">★★★★★<i>★★★★★</i></span><b id="fScore">0</b></div>
@@ -97,6 +99,7 @@ const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const H={'X-Key':KEY};
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1800)}
 function starsHTML(r,cls=''){return `<span class="stars ${cls}">★★★★★<i style="width:${r/5*100}%">★★★★★</i></span>`}
+function abvTxt(d){return d.abv!=null&&d.abv!==''?d.abv+'%':''}
 function photoURL(d){return d.photo?`${API}/photo/${d.id}?v=${d.pv||0}`:NOPIC}
 
 async function load(){
@@ -116,10 +119,11 @@ function render(){
   renderTabs();
   const q=$('#q').value.trim().toLowerCase().replace(/\s/g,'');
   let l=data.filter(d=>(tab=='전체'||d.type==tab)&&(!q||d.name.toLowerCase().replace(/\s/g,'').includes(q)));
-  l.sort(sort=='name'?(a,b)=>a.name.localeCompare(b.name,'ko'):(a,b)=>b.rating-a.rating||a.name.localeCompare(b.name,'ko'));
+  const byName=(a,b)=>a.name.localeCompare(b.name,'ko');
+  l.sort(sort=='name'?byName:sort=='rate'?(a,b)=>b.rating-a.rating||byName(a,b):(a,b)=>(b.abv??-1)-(a.abv??-1)||byName(a,b));
   $('#cnt').textContent=`${l.length}개`;
   if(!l.length){$('#list').innerHTML=`<div class="empty">${EMPTY}<p>${q?'안 먹어본 술이에요!':'첫 술을 등록해 보세요'}</p></div>`;return}
-  $('#list').innerHTML=l.map(d=>`<div class="item" data-id="${d.id}"><img class="thumb" loading="lazy" src="${photoURL(d)}"><div class="info"><div class="nm">${esc(d.name)}<span class="tp">${d.type}</span></div><div>${starsHTML(d.rating)}<span class="score">${d.rating.toFixed(1)}</span></div><div class="note">${esc(d.note)}</div></div></div>`).join('');
+  $('#list').innerHTML=l.map(d=>`<div class="item" data-id="${d.id}">${abvTxt(d)?`<span class="abv">${abvTxt(d)}</span>`:''}<img class="thumb" loading="lazy" src="${photoURL(d)}"><div class="info"><div class="nm">${esc(d.name)}<span class="tp">${d.type}</span></div><div>${starsHTML(d.rating)}<span class="score">${d.rating.toFixed(1)}</span></div><div class="note">${esc(d.note)}</div></div></div>`).join('');
 }
 
 $('#tabs').onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;render()}};
@@ -129,7 +133,7 @@ $('#list').onclick=e=>{const it=e.target.closest('.item');if(it)showDetail(it.da
 
 function showDetail(id){
   const d=data.find(x=>x.id==id);
-  $('#det').innerHTML=`<img class="big" src="${photoURL(d)}"><h2 style="margin:14px 0 6px">${esc(d.name)}<span class="tp">${d.type}</span></h2>${starsHTML(d.rating)}<span class="score" style="font-size:15px">${d.rating.toFixed(1)}</span><div class="dnote">${esc(d.note)||'한줄평 없음'}</div><div class="ddate">등록 ${d.date}</div><div class="btns"><button class="btn" id="dClose">닫기</button><button class="btn pri" id="dEdit">수정</button></div>`;
+  $('#det').innerHTML=`<img class="big" src="${photoURL(d)}"><h2 style="margin:14px 0 6px">${esc(d.name)}<span class="tp">${d.type}</span>${abvTxt(d)?`<span class="abv" style="position:static;margin-left:8px">${abvTxt(d)}</span>`:''}</h2>${starsHTML(d.rating)}<span class="score" style="font-size:15px">${d.rating.toFixed(1)}</span><div class="dnote">${esc(d.note)||'한줄평 없음'}</div><div class="ddate">등록 ${d.date}</div><div class="btns"><button class="btn" id="dClose">닫기</button><button class="btn pri" id="dEdit">수정</button></div>`;
   $('#detOv').classList.add('show');
   $('#dClose').onclick=()=>$('#detOv').classList.remove('show');
   $('#dEdit').onclick=()=>{$('#detOv').classList.remove('show');openForm(d)};
@@ -148,6 +152,7 @@ function openForm(d){
   $('#fTitle').textContent=d?'술 수정':'술 등록';
   $('#fName').value=d?d.name:$('#q').value.trim();
   $('#fNote').value=d?d.note:'';
+  $('#fAbv').value=d&&d.abv!=null?d.abv:'';
   fType=d?d.type:(tab=='전체'?'맥주':tab);renderTypes();
   setRate(d?d.rating:0);
   $('#pic').innerHTML=d&&d.photo?`<img src="${photoURL(d)}">`:'사진 넣기 (눌러서 찍기·고르기)';
@@ -173,7 +178,8 @@ $('#fSave').onclick=async()=>{
   try{
     let d=data.find(x=>x.id==editId);
     if(!d){d={id:Date.now().toString(36),date:new Date().toLocaleDateString('ko-KR'),photo:false};data.push(d)}
-    Object.assign(d,{name,type:fType,rating:fRate,note:$('#fNote').value.trim()});
+    const av=$('#fAbv').value.trim();
+    Object.assign(d,{name,type:fType,rating:fRate,note:$('#fNote').value.trim(),abv:av===''?null:Math.round(parseFloat(av)*10)/10});
     if(fBlob){const r=await fetch(`${API}/photo/${d.id}`,{method:'PUT',headers:{...H,'Content-Type':'image/jpeg'},body:fBlob});if(!r.ok)throw 0;d.photo=true;d.pv=(d.pv||0)+1}
     await saveData();
     $('#formOv').classList.remove('show');render();toast('저장했어요');
