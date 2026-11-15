@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>02술도감</title>
+<meta name="theme-color" content="#1D9E75">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--g9:#04342C;--g8:#085041;--g6:#0F6E56;--g4:#1D9E75;--g2:#5DCAA5;--g1:#9FE1CB;--g0:#E1F5EE;--star:#EF9F27}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"Noto Sans KR",sans-serif;background:var(--g0);color:var(--g9);min-height:100vh;overflow-x:hidden}
+body::before,body::after{content:"";position:fixed;border-radius:50%;background:var(--g1);z-index:-1}
+body::before{width:260px;height:260px;right:-90px;bottom:-90px}
+body::after{width:140px;height:140px;left:-50px;bottom:140px}
+header{position:sticky;top:0;background:var(--g0);padding:14px 14px 8px;z-index:5}
+h1{margin:0 0 10px;font-size:22px;text-align:center;color:var(--g8)}
+.search{width:100%;padding:11px 14px;border:1px solid var(--g2);border-radius:12px;font-size:16px;background:#fff;color:var(--g9);outline:none}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:10px 0 6px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;padding:7px 14px;border-radius:20px;border:1px solid var(--g2);background:#fff;color:var(--g8);font-size:14px}
+.tab.on{background:var(--g4);color:#fff;border-color:var(--g4)}
+.bar{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--g6)}
+.sort button{border:0;background:none;color:var(--g6);font-size:13px;padding:4px 6px}
+.sort button.on{color:var(--g8);font-weight:700;text-decoration:underline}
+main{padding:4px 14px 100px}
+.item{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--g2);border-radius:12px;padding:9px;margin-bottom:8px}
+.thumb{width:54px;height:70px;border-radius:8px;object-fit:cover;flex:none;background:#F1EFE8}
+.info{flex:1;min-width:0}
+.nm{font-size:16px;font-weight:700;color:var(--g8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp{font-size:11px;padding:2px 7px;border-radius:10px;background:var(--g0);color:var(--g6);margin-left:4px;font-weight:400;vertical-align:2px}
+.note{font-size:13px;color:var(--g6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.stars{position:relative;display:inline-block;font-size:16px;line-height:1;letter-spacing:1px;color:#D3D1C7}
+.stars i{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;color:var(--star);font-style:normal}
+.score{font-size:12px;color:var(--g6);margin-left:4px}
+.empty{text-align:center;margin-top:50px;color:var(--g8)}
+.fab{position:fixed;right:20px;bottom:24px;width:60px;height:60px;border-radius:50%;border:0;background:var(--g4);color:#fff;font-size:34px;line-height:60px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.ov{position:fixed;inset:0;background:rgba(4,52,44,.5);display:none;align-items:flex-end;z-index:20}
+.ov.show{display:flex}
+.sheet{background:#fff;width:100%;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px 16px 28px}
+.sheet h2{margin:0 0 14px;font-size:18px;color:var(--g8)}
+label{display:block;font-size:13px;color:var(--g6);margin:12px 0 5px}
+.in{width:100%;padding:11px;border:1px solid var(--g2);border-radius:10px;font-size:16px;color:var(--g9);background:#fff}
+.types{display:flex;flex-wrap:wrap;gap:6px}
+.pic{width:100%;height:220px;border-radius:12px;border:1px dashed var(--g2);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--g0);color:var(--g6);font-size:14px}
+.pic img{width:100%;height:100%;object-fit:contain}
+.rate{display:flex;align-items:center;gap:10px}
+.rate .stars{font-size:38px;letter-spacing:4px;touch-action:none}
+.rate b{font-size:18px;color:var(--g8)}
+.btns{display:flex;gap:8px;margin-top:20px}
+.btn{flex:1;padding:13px;border-radius:12px;border:1px solid var(--g4);background:#fff;color:var(--g8);font-size:16px}
+.btn.pri{background:var(--g4);color:#fff}
+.btn.del{border-color:#E24B4A;color:#A32D2D;flex:0 0 80px}
+.big{width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:var(--g0)}
+.dnote{font-size:16px;margin:12px 0;line-height:1.6;white-space:pre-wrap}
+.ddate{font-size:12px;color:var(--g6)}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--g8);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;display:none;z-index:30}
+</style>
+</head>
+<body>
+<header>
+<h1>02술도감</h1>
+<input class="search" id="q" placeholder="술 이름 검색 (먹었나?)">
+<div class="tabs" id="tabs"></div>
+<div class="bar"><span id="cnt"></span><span class="sort"><button data-s="name" class="on">이름순</button><button data-s="rate">평점순</button></span></div>
+</header>
+<main id="list"></main>
+<button class="fab" id="add">+</button>
+
+<div class="ov" id="formOv"><div class="sheet">
+<h2 id="fTitle">술 등록</h2>
+<div class="pic" id="pic">사진 넣기 (눌러서 찍기·고르기)</div>
+<input type="file" id="file" accept="image/*" hidden>
+<label>이름</label><input class="in" id="fName" placeholder="참이슬 후레쉬">
+<label>종류</label><div class="types" id="fTypes"></div>
+<label>평점 (별 왼쪽 누르면 반 개)</label>
+<div class="rate"><span class="stars" id="fStars">★★★★★<i>★★★★★</i></span><b id="fScore">0</b></div>
+<label>한줄평</label><input class="in" id="fNote" placeholder="깔끔하고 뒷맛이 달다">
+<div class="btns"><button class="btn del" id="fDel">삭제</button><button class="btn" id="fCancel">취소</button><button class="btn pri" id="fSave">저장</button></div>
+</div></div>
+
+<div class="ov" id="detOv"><div class="sheet" id="det"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='https://02-suldogam.YOUR-SUBDOMAIN.workers.dev';
+const KEY='여기에-비밀번호';
+const TYPES=['맥주','소주','막걸리','와인'];
+const NOPIC='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" fill="#F1EFE8"/><path d="M70 28h20v22q0 8 8 16t8 20v52q0 8-8 8H62q-8 0-8-8V86q0-12 8-20t8-16z" fill="none" stroke="#B4B2A9" stroke-width="3" stroke-dasharray="6 5"/><text x="80" y="112" text-anchor="middle" font-size="22" fill="#B4B2A9">?</text></svg>');
+const EMPTY='<svg viewBox="0 0 160 130" width="150"><path d="M52 20h56l-8 66q-1 8-9 8H69q-8 0-9-8z" fill="#fff" stroke="#1D9E75" stroke-width="3"/><path d="M58 62h44l-3 24q-1 5-6 5H67q-5 0-6-5z" fill="#9FE1CB"/><circle cx="72" cy="74" r="3" fill="#fff"/><circle cx="86" cy="80" r="2" fill="#fff"/></svg>';
+
+let data=JSON.parse(localStorage.getItem('sul')||'[]');
+let tab='전체',sort='name',editId=null,fType='맥주',fRate=0,fBlob=null,fPicDel=false;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const H={'X-Key':KEY};
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1800)}
+function starsHTML(r,cls=''){return `<span class="stars ${cls}">★★★★★<i style="width:${r/5*100}%">★★★★★</i></span>`}
+function photoURL(d){return d.photo?`${API}/photo/${d.id}?v=${d.pv||0}`:NOPIC}
+
+async function load(){
+  try{const r=await fetch(API+'/data',{headers:H});if(!r.ok)throw 0;data=await r.json();localStorage.setItem('sul',JSON.stringify(data));render()}
+  catch(e){toast('서버 연결 실패 — 저장된 목록 표시')}
+}
+async function saveData(){
+  localStorage.setItem('sul',JSON.stringify(data));
+  const r=await fetch(API+'/data',{method:'PUT',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('save');
+}
+
+function renderTabs(){
+  $('#tabs').innerHTML=['전체',...TYPES].map(t=>{const n=t=='전체'?data.length:data.filter(d=>d.type==t).length;return `<button class="tab ${t==tab?'on':''}" data-t="${t}">${t} ${n}</button>`}).join('');
+}
+function render(){
+  renderTabs();
+  const q=$('#q').value.trim().toLowerCase().replace(/\s/g,'');
+  let l=data.filter(d=>(tab=='전체'||d.type==tab)&&(!q||d.name.toLowerCase().replace(/\s/g,'').includes(q)));
+  l.sort(sort=='name'?(a,b)=>a.name.localeCompare(b.name,'ko'):(a,b)=>b.rating-a.rating||a.name.localeCompare(b.name,'ko'));
+  $('#cnt').textContent=`${l.length}개`;
+  if(!l.length){$('#list').innerHTML=`<div class="empty">${EMPTY}<p>${q?'안 먹어본 술이에요!':'첫 술을 등록해 보세요'}</p></div>`;return}
+  $('#list').innerHTML=l.map(d=>`<div class="item" data-id="${d.id}"><img class="thumb" loading="lazy" src="${photoURL(d)}"><div class="info"><div class="nm">${esc(d.name)}<span class="tp">${d.type}</span></div><div>${starsHTML(d.rating)}<span class="score">${d.rating.toFixed(1)}</span></div><div class="note">${esc(d.note)}</div></div></div>`).join('');
+}
+
+$('#tabs').onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;render()}};
+document.querySelectorAll('.sort button').forEach(b=>b.onclick=()=>{sort=b.dataset.s;document.querySelectorAll('.sort button').forEach(x=>x.classList.toggle('on',x==b));render()});
+$('#q').oninput=render;
+$('#list').onclick=e=>{const it=e.target.closest('.item');if(it)showDetail(it.dataset.id)};
+
+function showDetail(id){
+  const d=data.find(x=>x.id==id);
+  $('#det').innerHTML=`<img class="big" src="${photoURL(d)}"><h2 style="margin:14px 0 6px">${esc(d.name)}<span class="tp">${d.type}</span></h2>${starsHTML(d.rating)}<span class="score" style="font-size:15px">${d.rating.toFixed(1)}</span><div class="dnote">${esc(d.note)||'한줄평 없음'}</div><div class="ddate">등록 ${d.date}</div><div class="btns"><button class="btn" id="dClose">닫기</button><button class="btn pri" id="dEdit">수정</button></div>`;
+  $('#detOv').classList.add('show');
+  $('#dClose').onclick=()=>$('#detOv').classList.remove('show');
+  $('#dEdit').onclick=()=>{$('#detOv').classList.remove('show');openForm(d)};
+}
+$('#detOv').onclick=e=>{if(e.target.id=='detOv')$('#detOv').classList.remove('show')};
+
+function setRate(r){fRate=r;$('#fStars i').style.width=r/5*100+'%';$('#fScore').textContent=r.toFixed(1)}
+function rateFromX(x){const b=$('#fStars').getBoundingClientRect();let v=Math.ceil((x-b.left)/b.width*10)/2;setRate(Math.max(0.5,Math.min(5,v)))}
+$('#fStars').addEventListener('pointerdown',e=>{rateFromX(e.clientX);$('#fStars').setPointerCapture(e.pointerId)});
+$('#fStars').addEventListener('pointermove',e=>{if(e.buttons)rateFromX(e.clientX)});
+function renderTypes(){$('#fTypes').innerHTML=TYPES.map(t=>`<button class="tab ${t==fType?'on':''}" data-t="${t}">${t}</button>`).join('')}
+$('#fTypes').onclick=e=>{const t=e.target.dataset.t;if(t){fType=t;renderTypes()}};
+
+function openForm(d){
+  editId=d?d.id:null;fBlob=null;fPicDel=false;
+  $('#fTitle').textContent=d?'술 수정':'술 등록';
+  $('#fName').value=d?d.name:$('#q').value.trim();
+  $('#fNote').value=d?d.note:'';
+  fType=d?d.type:(tab=='전체'?'맥주':tab);renderTypes();
+  setRate(d?d.rating:0);
+  $('#pic').innerHTML=d&&d.photo?`<img src="${photoURL(d)}">`:'사진 넣기 (눌러서 찍기·고르기)';
+  $('#fDel').style.display=d?'':'none';
+  $('#formOv').classList.add('show');
+}
+$('#add').onclick=()=>openForm(null);
+$('#fCancel').onclick=()=>$('#formOv').classList.remove('show');
+$('#pic').onclick=()=>$('#file').click();
+$('#file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  fBlob=await shrink(f);$('#pic').innerHTML=`<img src="${URL.createObjectURL(fBlob)}">`;e.target.value='';
+};
+function shrink(file){return new Promise(res=>{const img=new Image();img.onload=()=>{const m=1000,s=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(res,'image/jpeg',0.8)};img.src=URL.createObjectURL(file)})}
+
+$('#fSave').onclick=async()=>{
+  const name=$('#fName').value.trim();
+  if(!name)return toast('이름을 입력해 주세요');
+  if(!fRate)return toast('별점을 눌러 주세요');
+  const dup=data.find(x=>x.id!=editId&&x.name.replace(/\s/g,'')==name.replace(/\s/g,''));
+  if(dup&&!confirm(`'${dup.name}' 이미 있어요! 그래도 저장할까요?`))return;
+  const btn=$('#fSave');btn.disabled=true;btn.textContent='저장 중…';
+  try{
+    let d=data.find(x=>x.id==editId);
+    if(!d){d={id:Date.now().toString(36),date:new Date().toLocaleDateString('ko-KR'),photo:false};data.push(d)}
+    Object.assign(d,{name,type:fType,rating:fRate,note:$('#fNote').value.trim()});
+    if(fBlob){const r=await fetch(`${API}/photo/${d.id}`,{method:'PUT',headers:{...H,'Content-Type':'image/jpeg'},body:fBlob});if(!r.ok)throw 0;d.photo=true;d.pv=(d.pv||0)+1}
+    await saveData();
+    $('#formOv').classList.remove('show');render();toast('저장했어요');
+  }catch(e){toast('저장 실패 — 인터넷 확인')}
+  btn.disabled=false;btn.textContent='저장';
+};
+$('#fDel').onclick=async()=>{
+  const d=data.find(x=>x.id==editId);
+  if(!confirm(`'${d.name}' 삭제할까요?`))return;
+  try{
+    if(d.photo)await fetch(`${API}/photo/${d.id}`,{method:'DELETE',headers:H});
+    data=data.filter(x=>x.id!=editId);await saveData();
+    $('#formOv').classList.remove('show');render();toast('삭제했어요');
+  }catch(e){toast('삭제 실패')}
+};
+
+render();load();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
